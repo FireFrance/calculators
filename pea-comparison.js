@@ -71,14 +71,20 @@ function getAllFees(maxAmount, feeFunctions) {
     return fees
 }
 
+function amundiMsciWorldFee(totalPortfolioAmount) {
+    return totalPortfolioAmount * 0.0038
+}
+
 const providers = [
     { 
         name:'Bourse Direct',
-        brokerFee: bouseDirectPeaBrokerageFee
+        calcBrokerFee: bouseDirectPeaBrokerageFee,
+        calcFundFees: amundiMsciWorldFee
     },
     {
         name: 'Boursorama',
-        brokerFee: boursoramaPeaBrokerageFee
+        calcBrokerFee: boursoramaPeaBrokerageFee,
+        calcFundFees: amundiMsciWorldFee
     }
     // Add more here to include in comparison
 ]
@@ -87,7 +93,7 @@ function getFeeGraphData() {
     const maxAmount = 10000
 
     const header = ['Amount', ...providers.map(({name}) => name)]
-    const fees = getAllFees(maxAmount, providers.map(({brokerFee}) => brokerFee))
+    const fees = getAllFees(maxAmount, providers.map(({calcBrokerFee}) => calcBrokerFee))
 
     const csvData = buildCsv(header, fees)
     return csvData
@@ -110,23 +116,31 @@ function getAccumlationGraphData() {
     // we can calculate a management fee if needed in future
     const lastYearValues = {}
     for (let i = 1; i <= numberOfYears; i++) {
-        for (const { name, brokerFee } of providers) {
+        for (const { name, calcBrokerFee, calcFundFees } of providers) {
             // The brokerage fee is taken out of the monthly contribution before we invest
-            const fee = brokerFee(monthlyContribution)
-            const contributionAfterBrokerFee = monthlyContribution - fee
+            const brokerFee = calcBrokerFee(monthlyContribution)
+            const contributionAfterBrokerFee = monthlyContribution - brokerFee
 
-            // Calculate future value including compounding + fees. Negation is needed
+            const lastYearValueForThisProvider = lastYearValues[name] || startingValue
+
+            // Calculate future value including compounding + brokerage fees. Negation is needed
             // because standard FV uses positive values for debts and negative for growth
             const newValue = -FV(
                 expectedYearlyGrowthRate / MONTHS_PER_YEAR,
                 MONTHS_PER_YEAR,
                 contributionAfterBrokerFee,
-                lastYearValues[name] || startingValue,
-                1)
+                lastYearValueForThisProvider,
+                1
+            )
 
-                // Now we don't need last year's value so we overwrite it with
-                // what we just calculated, ready for the following year
-                lastYearValues[name] = newValue
+            // Each year, we apply the fund expense ratio to the total amount that was in 
+            // the portfolio at the end of the year.
+            const fundFees = calcFundFees(newValue)
+            const endOfYearValue = newValue - fundFees
+
+            // Now we don't need last year's value so we overwrite it with
+            // what we just calculated, ready for the following year
+            lastYearValues[name] = endOfYearValue
         }
 
         const row = [i, ...providers.map(({name}) => lastYearValues[name])] 
