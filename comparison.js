@@ -141,7 +141,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
         const row = [i, ...providers.map(({name}) => lastYearValues[name])] 
         rows.push(row)
     }
-    return [header, rows]
+    return [header, ...rows]
 }
 
 
