@@ -13,7 +13,6 @@
     <h1>PEA tester</h1>
   </header>
 
-
   <div class="card">
     <div class="card-body">
         <h2>Simulate accumlation</h2>
@@ -34,14 +33,24 @@
                 <label for="monthlyContribution">Initial value</label>
                 <input type="number" class="form-control" id="monthlyContribution" value=833>
             </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="submit" class="btn btn-primary" onclick="submitAccumulation()">Submit</button>
           </form>
         
     </div>
   </div>
   
-  <script src="comparison.js"></script>
+  <script src="pea-comparison.js"></script>
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+
+<script type="text/javascript">
+  function submitAccumulation() {
+    const formData = $("#preview_form").serialize()
+    console.info(formData)
+  }
+
+
+</script>
+
 </body>
 </html>

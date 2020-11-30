@@ -22,26 +22,6 @@ function buildCsv(header, rows) {
         .join('\n') 
 }
 
-function isNumber(n) {
-    return !isNaN(parseFloat(n)) && isFinite(n);
-  }
-
-  function formatForDisplay(value) {
-    if (isNumber(value)) {
-        return value.toFixed(2)
-    }
-    return value
-}
-
-function buildHtml(header, rows) {
-    const allData = [header, ...rows]
-    const htmlRows = allData.map(line => {
-        const row = line.map(col => `<td>${formatForDisplay(col)}</td>`).join('')
-        return `<tr>${row}</tr>`
-    })
-    return htmlRows.join('\n')
-}
-
 
 function bouseDirectPeaBrokerageFee(tradeAmount) {
     const halfAPercent = 0.005
@@ -119,12 +99,7 @@ function getFeeGraphData() {
     return csvData
 }
 
-function getAccumlationGraphData() {
-    const expectedYearlyGrowthRate = 0.07
-    const startingValue = 0
-    const monthlyContribution = 833
-    const numberOfYears = 15
-
+function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears) {
     // First column is the year, starting at 0, then we have one per provider
     const header = ['Year', ...providers.map(({name}) => name)]
 
@@ -166,24 +141,8 @@ function getAccumlationGraphData() {
         const row = [i, ...providers.map(({name}) => lastYearValues[name])] 
         rows.push(row)
     }
-
-    //const csvData = buildCsv(header, rows)
-    //return csvData
-    const htmlTableData = buildHtml(header, rows)
-    return htmlTableData
+    return [header, rows]
 }
-
-
-
-// This will give a comparitive graph of the fees based on various trade amounts
-// console.info(getFeeGraphData())
-
-// Example usage of FV function, this is starting with 0, paying 500 a month for a year
-//console.info(-FV(0.07/12, 12, 500, 0, 1))
-
-// Comparitive graph of PEA accummulatio
-console.info(getAccumlationGraphData())
-
 
 
    
