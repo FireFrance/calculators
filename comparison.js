@@ -101,7 +101,7 @@ function getFeeGraphData() {
 
 function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit) {
     // First column is the year, starting at 0, then we have one per provider
-    const header = ['Year', ...providers.map(({name}) => name)]
+    const header = ['Year', ...providers.map(({name}) => name), "Cash contribution"]
 
     // First row, year 0 all providers start at the startingValue
     const rows = [[0, ...providers.map(() => startingValue)]]
@@ -111,6 +111,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
     // we can calculate a management fee if needed in future
     const lastYearValues = {}
     let totalContribution = 0
+    const cashEquivalent = [startingValue]
     for (let i = 1; i <= numberOfYears; i++) {
         for (const { name, calcBrokerFee, calcFundFees } of providers) {
 
@@ -118,9 +119,16 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             const brokerFee = calcBrokerFee(monthlyContribution)
             const contributionAfterBrokerFee = monthlyContribution - brokerFee
 
-            const contributionAfterLimit = totalContribution > limit
-                ? 0
-                : contributionAfterBrokerFee
+            const canKeepContributing = totalContribution + monthlyContribution < limit
+
+            const contributionAfterLimit = canKeepContributing
+                ? contributionAfterBrokerFee
+                : 0
+
+            if (canKeepContributing) {
+                totalContribution += monthlyContribution
+                // cashEquivalent.push(totalContribution)
+            }
 
             const lastYearValueForThisProvider = lastYearValues[name] || startingValue
 
@@ -144,7 +152,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             lastYearValues[name] = endOfYearValue
         }
 
-        const row = [i, ...providers.map(({name}) => lastYearValues[name])] 
+        const row = [i, ...providers.map(({name}) => lastYearValues[name]), totalContribution] 
         rows.push(row)
     }
     return [header, ...rows]
