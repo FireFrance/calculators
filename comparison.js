@@ -99,7 +99,7 @@ function getFeeGraphData() {
     return csvData
 }
 
-function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears) {
+function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit) {
     // First column is the year, starting at 0, then we have one per provider
     const header = ['Year', ...providers.map(({name}) => name)]
 
@@ -110,11 +110,17 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
     // Store and use the values for each provider from the previous year, so 
     // we can calculate a management fee if needed in future
     const lastYearValues = {}
+    let totalContribution = 0
     for (let i = 1; i <= numberOfYears; i++) {
         for (const { name, calcBrokerFee, calcFundFees } of providers) {
+
             // The brokerage fee is taken out of the monthly contribution before we invest
             const brokerFee = calcBrokerFee(monthlyContribution)
             const contributionAfterBrokerFee = monthlyContribution - brokerFee
+
+            const contributionAfterLimit = totalContribution > limit
+                ? 0
+                : contributionAfterBrokerFee
 
             const lastYearValueForThisProvider = lastYearValues[name] || startingValue
 
@@ -123,7 +129,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             const newValue = -FV(
                 expectedYearlyGrowthRate / MONTHS_PER_YEAR,
                 MONTHS_PER_YEAR,
-                contributionAfterBrokerFee,
+                contributionAfterLimit,
                 lastYearValueForThisProvider,
                 1
             )
