@@ -104,7 +104,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
     const header = ['Year', ...providers.map(({name}) => name), "Cash contribution"]
 
     // First row, year 0 all providers start at the startingValue
-    const rows = [[0, ...providers.map(() => startingValue)]]
+    const rows = [[0, ...providers.map(() => startingValue), 0]]
 
     // Iterate through each year calculating the amount that each account will contain
     // Store and use the values for each provider from the previous year, so 
@@ -119,16 +119,16 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             const brokerFee = calcBrokerFee(monthlyContribution)
             const contributionAfterBrokerFee = monthlyContribution - brokerFee
 
-            const canKeepContributing = totalContribution + monthlyContribution < limit
+            // const canKeepContributing = totalContribution + monthlyContribution < limit
 
-            const contributionAfterLimit = canKeepContributing
-                ? contributionAfterBrokerFee
-                : 0
+            // const contributionAfterLimit = canKeepContributing
+            //     ? contributionAfterBrokerFee
+            //     : 0
 
-            if (canKeepContributing) {
-                totalContribution += monthlyContribution
-                // cashEquivalent.push(totalContribution)
-            }
+            // if (canKeepContributing) {
+            //     totalContribution += monthlyContribution * 12
+            //     // cashEquivalent.push(totalContribution)
+            // }
 
             const lastYearValueForThisProvider = lastYearValues[name] || startingValue
 
@@ -137,7 +137,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             const newValue = -FV(
                 expectedYearlyGrowthRate / MONTHS_PER_YEAR,
                 MONTHS_PER_YEAR,
-                contributionAfterLimit,
+                contributionAfterBrokerFee,
                 lastYearValueForThisProvider,
                 1
             )
@@ -161,3 +161,4 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
 
    
 
+console.info(getAccumlationGraphData(0.07, 0, 833, 15, 15000))
