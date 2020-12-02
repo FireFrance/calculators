@@ -9,90 +9,117 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
 </head>
 <body>
-  <header>
-    <h1>PEA tester</h1>
-  </header>
-
   <div class="card">
     <div class="card-body">
-        <h2>Simulate accumlation</h2>
-        <form id="accumlation">
-            <div class="form-group">
-              <label for="expectedYearlyGrowthRate">Expected yearly growth in percent</label>
-              <input type="number" class="form-control" name="expectedYearlyGrowthRate" value=7>
+    <header>
+      <h1>PEA comparison simulator</h1>
+    </header>
+
+    <p>
+      This calculator will simulate the accumulation of savings in a PEA over time, based on a starting amount and a fixed monthly contribution.
+      When the PEA's limit of 150,000 euros is hit, contributions will automatically be stopped as close to the max as possible, and the funds will
+      continue to grow from then until the end of the period.
+    </p>
+    
+    <p>
+      Please note that the PEA account with the biggest value after accumulation is not necessarily the best one. Brokerage fees will be incurred again
+      when trying to withdraw any cash from it, and some providers charge additional fees for things like transferring funds into a bank account.
+      See <a href="https://fireuktofrance.wordpress.com/2020/11/29/investing-from-france-best-pea-for-fire/" target="new">our blog post on PEAs for more details</a>
+    </p>
+    <p>
+      The calculator provides a comparison between the best PEA products I found.
+      The code is all open source and MIT licensed, so feel free to check it out and clone/fork it if required.
+    </p>
+    <p>
+      All calculators are performed in your browser and no data that you input is sent to any server
+    </p>
+
+    <div class="card">
+      <div class="card-body">
+          <h2>Simulate accumlation</h2>
+          <form id="accumlation">
+              <div class="form-group">
+                <label for="expectedYearlyGrowthRate">Expected yearly growth in percent</label>
+                <input type="number" class="form-control" name="expectedYearlyGrowthRate" value=7>
+              </div>
+              <div class="form-group">
+                  <label for="numberOfYears">Number of years to accummulate</label>
+                  <input type="number" class="form-control" name="numberOfYears" value=15>
+              </div>
+              <div class="form-group">
+                  <label for="startingValue">Initial value</label>
+                  <input type="number" class="form-control" name="startingValue" value=0>
+              </div>
+              <div class="form-group">
+                  <label for="monthlyContribution">Monthly contribution</label>
+                  <input type="number" class="form-control" name="monthlyContribution" value=833>
+              </div>
+              <div class="form-group">
+                <label for="limit">Limit - after which contributions will be stopped</label>
+                <input type="number" class="form-control" name="limit" value=150000>
             </div>
-            <div class="form-group">
-                <label for="numberOfYears">Number of years to accummulate</label>
-                <input type="number" class="form-control" name="numberOfYears" value=15>
+              <button type="button" class="btn btn-primary" onclick="submitAccumulation()">Submit</button>
+            </form>
+          
+            <div class="card">
+              <div class="card-body">
+                <div id="accumlation-table"></div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="startingValue">Initial value</label>
-                <input type="number" class="form-control" name="startingValue" value=0>
-            </div>
-            <div class="form-group">
-                <label for="monthlyContribution">Monthly contribution</label>
-                <input type="number" class="form-control" name="monthlyContribution" value=833>
-            </div>
-            <div class="form-group">
-              <label for="limit">Limit - after which contributions will be stopped</label>
-              <input type="number" class="form-control" name="limit" value=150000>
-          </div>
-            <button type="button" class="btn btn-primary" onclick="submitAccumulation()">Submit</button>
-          </form>
-         
+      </div>
     </div>
-  </div>
-  <div class="card">
-    <div class="card-body">
-      <div id="accumlation-table"></div>
-      </div>
-      </div>
-  
-  <script src="comparison.js"></script>
-  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet">
-<script type="text/javascript">
+    <div class="card">
+      <div class="card-body">
+       
+        </div>
+        </div>
+    
+    <script src="comparison.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet">
+  <script type="text/javascript">
 
-  let table = null
+    let table = null
 
-  function submitAccumulation() {
-    const formData = $("#accumlation").serializeArray()
+    function submitAccumulation() {
+      const formData = $("#accumlation").serializeArray()
 
-    const parameters = formData.reduce((acc, cur) => (
-        {
-          ...acc,
-          [cur.name]: cur.value
-        }
-    ), {})
+      const parameters = formData.reduce((acc, cur) => (
+          {
+            ...acc,
+            [cur.name]: cur.value
+          }
+      ), {})
 
-    const { expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit } = parameters
+      const { expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit } = parameters
 
-    const growthRatePercent = expectedYearlyGrowthRate / 100
+      const growthRatePercent = expectedYearlyGrowthRate / 100
 
-    const graphData = getAccumlationGraphData(growthRatePercent, startingValue, monthlyContribution, numberOfYears, limit) 
-    const container = document.getElementById('accumlation-table');
+      const graphData = getAccumlationGraphData(growthRatePercent, startingValue, monthlyContribution, numberOfYears, limit)
+      const container = document.getElementById('accumlation-table');
 
-    if (table) {
-      table.loadData(graphData)
+      if (table) {
+        table.loadData(graphData)
+      }
     }
-  }
 
-  $("#accummulation-table").ready(() => {
-    const container = document.getElementById('accumlation-table');
-    table = new Handsontable(container, {
-      data: [],
-      rowHeaders: false,
-      colHeaders: true,
-      licenseKey: 'non-commercial-and-evaluation'
-    });
-  })
+    $("#accummulation-table").ready(() => {
+      const container = document.getElementById('accumlation-table');
+      table = new Handsontable(container, {
+        data: [],
+        rowHeaders: false,
+        colHeaders: true,
+        licenseKey: 'non-commercial-and-evaluation'
+      });
+    })
 
-  
+    
 
 
-</script>
-
+  </script>
+    </div>
+    </div>
 </body>
 </html>
