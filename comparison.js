@@ -122,12 +122,30 @@ function getFeeGraphData() {
     return csvData
 }
 
+function calculateMonthsOfContributionLeftInYear(accountLimit, totalContribution, monthlyContribution) {
+    if (accountLimit) {
+        const contributionLeftAtStartOfYear = accountLimit - totalContribution
+        const monthsLeft = Math.floor(contributionLeftAtStartOfYear / monthlyContribution)
+
+        if (monthsLeft > MONTHS_PER_YEAR) {
+            return MONTHS_PER_YEAR
+        }
+        if (monthsLeft < 0) {
+            return 0
+        }
+
+        return monthsLeft
+    }
+
+    return MONTHS_PER_YEAR
+}
+
 function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit) {
     // First column is the year, starting at 0, then we have one per provider
-    const header = ['Year', "Contribution so far", ...providers.map(({name}) => name), "Cash contribution"]
+    const header = ['Year', "Cash contribution", ...providers.map(({name}) => name)]
 
     // First row, year 0 all providers start at the startingValue
-    const rows = [[0, 0, ...providers.map(() => startingValue), 0]]
+    const rows = [[0, 0, ...providers.map(() => startingValue)]]
 
     // Iterate through each year calculating the amount that each account will contain
     // Store and use the values for each provider from the previous year, so 
@@ -136,33 +154,36 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
     let totalContribution = 0
     const cashEquivalent = [startingValue]
     for (let i = 1; i <= numberOfYears; i++) {
-        for (const { name, calcBrokerFee, calcFundFees } of providers) {
+            // If the account has a contribution limit, like a PEA, figure out if we're going to hit this 
+            // within the year and if so how many months we can continue to contribute
+            const monthsLeftInYearToContribute = calculateMonthsOfContributionLeftInYear(limit, totalContribution, monthlyContribution)
+            totalContribution += (monthlyContribution * monthsLeftInYearToContribute)
 
+        for (const { name, calcBrokerFee, calcFundFees } of providers) {
             // The brokerage fee is taken out of the monthly contribution before we invest
             const brokerFee = calcBrokerFee(monthlyContribution)
             const contributionAfterBrokerFee = monthlyContribution - brokerFee
 
-            // const canKeepContributing = totalContribution + monthlyContribution < limit
-
-            // const contributionAfterLimit = canKeepContributing
-            //     ? contributionAfterBrokerFee
-            //     : 0
-
-            // if (canKeepContributing) {
-            //     totalContribution += monthlyContribution * 12
-            //     // cashEquivalent.push(totalContribution)
-            // }
-
             const lastYearValueForThisProvider = lastYearValues[name] || startingValue
-            totalContribution = (monthlyContribution * 12) * i
 
             // Calculate future value including compounding + brokerage fees. Negation is needed
             // because standard FV uses positive values for debts and negative for growth
-            const newValue = -FV(
+            const valueAfterContributioningMonths = -FV(
                 expectedYearlyGrowthRate / MONTHS_PER_YEAR,
-                MONTHS_PER_YEAR,
+                monthsLeftInYearToContribute,
                 contributionAfterBrokerFee,
                 lastYearValueForThisProvider,
+                1
+            )
+
+            // Additional compounding during months of the year after which you've maxed
+            // out the contributions and can't pay anything in.
+            const nonContributingMonths = MONTHS_PER_YEAR - monthsLeftInYearToContribute
+            const newValue = -FV(
+                expectedYearlyGrowthRate / MONTHS_PER_YEAR,
+                nonContributingMonths,
+                0,
+                valueAfterContributioningMonths,
                 1
             )
 
@@ -176,13 +197,12 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             lastYearValues[name] = endOfYearValue
         }
 
-        const row = [i, totalContribution, ...providers.map(({name}) => lastYearValues[name]), totalContribution] 
+        const row = [i, totalContribution, ...providers.map(({name}) => lastYearValues[name])] 
         rows.push(row)
     }
     return [header, ...rows]
 }
 
-
    
 
- console.info(getAccumlationGraphData(0.07, 0, 833, 15, 15000))
+//  console.info(getAccumlationGraphData(0.07, 0, 1000, 15, 150000))
