@@ -124,10 +124,10 @@ function getFeeGraphData() {
 
 function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit) {
     // First column is the year, starting at 0, then we have one per provider
-    const header = ['Year', ...providers.map(({name}) => name), "Cash contribution"]
+    const header = ['Year', "Contribution so far", ...providers.map(({name}) => name), "Cash contribution"]
 
     // First row, year 0 all providers start at the startingValue
-    const rows = [[0, ...providers.map(() => startingValue), 0]]
+    const rows = [[0, 0, ...providers.map(() => startingValue), 0]]
 
     // Iterate through each year calculating the amount that each account will contain
     // Store and use the values for each provider from the previous year, so 
@@ -154,6 +154,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             // }
 
             const lastYearValueForThisProvider = lastYearValues[name] || startingValue
+            totalContribution = (monthlyContribution * 12) * i
 
             // Calculate future value including compounding + brokerage fees. Negation is needed
             // because standard FV uses positive values for debts and negative for growth
@@ -175,7 +176,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             lastYearValues[name] = endOfYearValue
         }
 
-        const row = [i, ...providers.map(({name}) => lastYearValues[name]), totalContribution] 
+        const row = [i, totalContribution, ...providers.map(({name}) => lastYearValues[name]), totalContribution] 
         rows.push(row)
     }
     return [header, ...rows]
@@ -184,4 +185,4 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
 
    
 
-console.info(getAccumlationGraphData(0.07, 0, 833, 15, 15000))
+ console.info(getAccumlationGraphData(0.07, 0, 833, 15, 15000))
