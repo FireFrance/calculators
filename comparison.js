@@ -54,6 +54,24 @@ function boursoramaPeaBrokerageFee(tradeAmount) {
     return 1.99
 }
 
+function saxoBankPeaBrokerageFee(tradeAmount) {
+    if (tradeAmount <= 1000) {
+        return Math.min(2.5, (tradeAmount * 0.005))
+    }
+    if (tradeAmount <= 5000) {
+        return 5
+    }
+    if (tradeAmount <= 7500) {
+        return 7.5
+    }
+    if (tradeAmount <= 10000) {
+        return 10
+    }
+
+    // Above 10k
+    return tradeAmount * 0.001
+}
+
 
 function calculateFees(maxAmount, feeFunction) {
     const points = []
@@ -84,6 +102,11 @@ const providers = [
     {
         name: 'Boursorama',
         calcBrokerFee: boursoramaPeaBrokerageFee,
+        calcFundFees: amundiMsciWorldFee
+    },
+    {
+        name: 'Saxo',
+        calcBrokerFee: saxoBankPeaBrokerageFee,
         calcFundFees: amundiMsciWorldFee
     }
     // Add more here to include in comparison
