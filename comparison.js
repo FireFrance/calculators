@@ -13,6 +13,12 @@ function FV(rate, numberOfPayments, paymentAmount, principalValue, type) {
     return futureValue.toFixed(2);
 }
 
+// This swaps the columns and rows of a grid/matrix of values
+function transpose(matrix) {
+    return matrix[0].map((x,i) => matrix.map(x => x[i]))
+} 
+
+
 // Quick and rough CSV builder from two arrays, print output into a CSV file
 // and open directly in Excel to build graphs etc
 function buildCsv(header, rows) {
@@ -97,17 +103,20 @@ const providers = [
     { 
         name:'Bourse Direct',
         calcBrokerFee: bouseDirectPeaBrokerageFee,
-        calcFundFees: amundiMsciWorldFee
+        calcFundFees: amundiMsciWorldFee,
+        calcWithdrawalFee: () => 6
     },
     {
         name: 'Boursorama',
         calcBrokerFee: boursoramaPeaBrokerageFee,
-        calcFundFees: amundiMsciWorldFee
+        calcFundFees: amundiMsciWorldFee,
+        calcWithdrawalFee: () => 0
     },
     {
         name: 'Saxo',
         calcBrokerFee: saxoBankPeaBrokerageFee,
-        calcFundFees: amundiMsciWorldFee
+        calcFundFees: amundiMsciWorldFee,
+        calcWithdrawalFee: () => 0
     }
     // Add more here to include in comparison
 ]
@@ -203,6 +212,56 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
     return [header, ...rows]
 }
 
-   
+function calculateWithdrawalAmount(totalContribution, totalPortfolioAmount, withdrawalRatePercent, provider) {
+    const { calcBrokerFee, calcWithdrawalFee } = provider
+
+    const grossMonthly = (totalPortfolioAmount * (withdrawalRatePercent / 100)) / MONTHS_PER_YEAR
+    const afterBrokerageFees = grossMonthly - calcBrokerFee(grossMonthly)
+    const afterWithdrawalFees = afterBrokerageFees - calcWithdrawalFee(afterBrokerageFees)
+
+    const proportionOfGains =  1 - (totalContribution / totalPortfolioAmount)
+    const taxableAmount = proportionOfGains * afterWithdrawalFees
+    const totalTax = taxableAmount * (17.2 / 100)
+    const afterTax = afterWithdrawalFees - totalTax
+
+    return [grossMonthly, afterBrokerageFees, afterWithdrawalFees, afterTax]
+}
+
+
+function getWithdrawalAmounts(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, withdrawalRatePercent, limit) {
+    const accumulationData = getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit)
+
+    const finalValues = accumulationData[accumulationData.length - 1]
+    const [, totalContribution, ...totalPortfolioAmounts] = finalValues
+
+    const header = ['', ...providers.map(({name}) => name)]
+
+    const valueTitles = [
+        `Gross Monthly at ${withdrawalRatePercent}%`, 
+        'After brokerage fees',
+        'After withdrawal fees',
+        'Final after 17.2% tax on gains proportion'
+    ]
+
+    const providerValues = [valueTitles]
+    let providerNumber = 0
+    for (const provider of providers) {
+        values = calculateWithdrawalAmount(totalContribution, totalPortfolioAmounts[providerNumber], withdrawalRatePercent, provider)
+        providerValues.push(values)
+        providerNumber++
+    }
+
+    return [
+        header,
+        [ 'Initial Portfolio Total', ...totalPortfolioAmounts], 
+        ...transpose(providerValues)
+    ]
+}
+
+
+
+//console.info(getFeeGraphData())
+
 
 //  console.info(getAccumlationGraphData(0.07, 0, 1000, 15, 150000))
+console.info(getWithdrawalAmounts(0.07, 0, 833, 15, 4, 150000))

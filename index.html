@@ -57,7 +57,11 @@
               <div class="form-group">
                 <label for="limit">Limit - after which contributions will be stopped</label>
                 <input type="number" class="form-control" name="limit" value=150000>
-            </div>
+              </div>
+              <div class="form-group">
+                <label for="limit">Withdrawal Rate Percentage - 4% is optimistic, 3% more conservative</label>
+                <input type="number" class="form-control" name="withdrawalRate" value=4>
+              </div>
               <button type="button" class="btn btn-primary" onclick="submitAccumulation()">Submit</button>
             </form>
           
@@ -66,6 +70,10 @@
                 <div id="accumlation-table"></div>
                 </div>
             </div>
+            <div class="card-body">
+              <div id="withdrawal-table"></div>
+              </div>
+          </div>
       </div>
     </div>
     <div class="card">
@@ -82,6 +90,7 @@
   <script type="text/javascript">
 
     let table = null
+    let withdrawalTable = null
 
     function submitAccumulation() {
       const formData = $("#accumlation").serializeArray()
@@ -93,7 +102,7 @@
           }
       ), {})
 
-      const { expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit } = parameters
+      const { expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit, withdrawalRate } = parameters
 
       const growthRatePercent = expectedYearlyGrowthRate / 100
 
@@ -102,6 +111,11 @@
 
       if (table) {
         table.loadData(graphData)
+      }
+
+      const widthdrawalData = getWithdrawalAmounts(growthRatePercent, startingValue, monthlyContribution, numberOfYears, withdrawalRate, limit)
+      if (withdrawalTable) {
+        withdrawalTable.loadData(widthdrawalData)
       }
     }
 
@@ -114,6 +128,18 @@
         licenseKey: 'non-commercial-and-evaluation'
       });
     })
+
+    $("#withdrawal-table").ready(() => {
+      const container = document.getElementById('withdrawal-table');
+      withdrawalTable = new Handsontable(container, {
+        data: [],
+        rowHeaders: false,
+        colHeaders: true,
+        licenseKey: 'non-commercial-and-evaluation'
+      });
+    })
+
+    
 
     
 
