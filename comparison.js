@@ -96,30 +96,53 @@ function getAllFees(maxAmount, feeFunctions) {
 }
 
 
+// Returns the total brokerage fee per month assuming that the given amount
+// is invested in the specified portfolio, and that the funtion calcProviderFee
+// gives the fee for each transaction. 
+function calculateMonthlyBrokerageFee(amount, portfolio, calcProviderFee) {
+    const transactionFees = portfolio.map(fund => calcProviderFee(amount * (fund.percentage / 100)))
+    return transactionFees.reduce((total, current) => total + current, 0)
+}
+
+
+
 const providers = [
     { 
         name:'Bourse Direct',
         calcBrokerFee: bouseDirectPeaBrokerageFee,
-        calcWithdrawalFee: () => 6
+        calcWithdrawalFee: () => 6,
+        portfolio: [
+            { name: 'MSCI World', expenseRatio: 0.38, percentage: 100 }
+        ]
     },
     {
         name: 'Boursorama',
         calcBrokerFee: boursoramaPeaBrokerageFee,
-        calcWithdrawalFee: () => 0
+        calcWithdrawalFee: () => 0,
+        portfolio: [
+            { name: 'MSCI World', expenseRatio: 0.38, percentage: 100 }
+        ]
     },
     {
         name: 'Saxo',
         calcBrokerFee: saxoBankPeaBrokerageFee,
-        calcWithdrawalFee: () => 0
+        calcWithdrawalFee: () => 0,
+        portfolio: [
+            { name: 'MSCI World', expenseRatio: 0.38, percentage: 100 }
+        ]
     }
     // Add more here to include in comparison
 ]
+
+
 
 function getFeeGraphData() {
     const maxAmount = 10000
 
     const header = ['Amount', ...providers.map(({name}) => name)]
-    const fees = getAllFees(maxAmount, providers.map(({calcBrokerFee}) => calcBrokerFee))
+    const fees = getAllFees(maxAmount, providers.map(({calcBrokerFee, portfolio}) => {
+        return amount => calculateMonthlyBrokerageFee(amount, portfolio, calcBrokerFee)
+    }))
 
     const csvData = buildCsv(header, fees)
     return csvData
@@ -162,9 +185,9 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             const monthsLeftInYearToContribute = calculateMonthsOfContributionLeftInYear(limit, totalContribution, monthlyContribution)
             totalContribution += (monthlyContribution * monthsLeftInYearToContribute)
 
-        for (const { name, calcBrokerFee } of providers) {
+        for (const { name, portfolio, calcBrokerFee } of providers) {
             // The brokerage fee is taken out of the monthly contribution before we invest
-            const brokerFee = calcBrokerFee(monthlyContribution)
+            const brokerFee = calculateMonthlyBrokerageFee(monthlyContribution, portfolio, calcBrokerFee)
             const contributionAfterBrokerFee = monthlyContribution - brokerFee
 
             const lastYearValueForThisProvider = lastYearValues[name] || startingValue
@@ -207,10 +230,10 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
 }
 
 function calculateWithdrawalAmount(totalContribution, totalPortfolioAmount, withdrawalRatePercent, provider) {
-    const { calcBrokerFee, calcWithdrawalFee } = provider
+    const { calcBrokerFee, calcWithdrawalFee, portfolio } = provider
 
     const grossMonthly = (totalPortfolioAmount * (withdrawalRatePercent / 100)) / MONTHS_PER_YEAR
-    const afterBrokerageFees = grossMonthly - calcBrokerFee(grossMonthly)
+    const afterBrokerageFees = grossMonthly - calculateMonthlyBrokerageFee(grossMonthly, portfolio, calcBrokerFee)
     const afterWithdrawalFees = afterBrokerageFees - calcWithdrawalFee(afterBrokerageFees)
 
     const proportionOfGains =  1 - (totalContribution / totalPortfolioAmount)
@@ -251,11 +274,3 @@ function getWithdrawalAmounts(expectedYearlyGrowthRate, startingValue, monthlyCo
         ...transpose(providerValues)
     ]
 }
-
-
-
-//console.info(getFeeGraphData())
-
-
-//  console.info(getAccumlationGraphData(0.07, 0, 1000, 15, 150000))
-console.info(getWithdrawalAmounts(0.07, 0, 833, 15, 4, 150000))

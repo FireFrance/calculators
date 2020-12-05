@@ -28,8 +28,13 @@
       See <a href="https://fireuktofrance.wordpress.com/2020/11/29/investing-from-france-best-pea-for-fire/" target="new">our blog post on PEAs for more details</a>
     </p>
     <p>
-      The calculator provides a comparison between the best PEA products I found.
-      The code is all open source and MIT licensed, so feel free to check it out and clone/fork it if required.
+      The calculator provides a comparison between the best PEA products I found. First, the monthly contribution you input has the brokerage fees
+      for each bank subtracted from it. These fees differ depending on the amount you put in. After this a future value function is used to compound
+      based on the monthly fraction of the expected growth rate. Once the chosen period of saving is over, we calculate an estimated monthly income using the 
+      specified withdrawal rate, subtracting the brokerage fees again to sell the shares and deducting taxes. This assumes that the withdrawals don't reduce
+      the capital in the account, and that you have waited at least 5 years for PEAs before withdrawing.
+
+      The code is all open source and MIT licensed, so feel free to check it out and clone/fork it you want to change stuff.
     </p>
     <p>
       All calculators are performed in your browser and no data that you input is sent to any server
@@ -97,7 +102,25 @@
     let table = null
     let withdrawalTable = null
 
-    function submitAccumulation() {
+    function getAccumulationData() {
+      const formData = $("#accumlation").serializeArray()
+
+      const parameters = formData.reduce((acc, cur) => (
+          {
+            ...acc,
+            [cur.name]: cur.value
+          }
+      ), {})
+
+      const { expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit, withdrawalRate, expenseRatio } = parameters
+
+      const growthRatePercent = expectedYearlyGrowthRate / 100
+
+      const graphData = getAccumlationGraphData(growthRatePercent, startingValue, monthlyContribution, numberOfYears, expenseRatio, limit)
+      return graphData
+    }
+
+    function getWithdrawalData() {
       const formData = $("#accumlation").serializeArray()
 
       const parameters = formData.reduce((acc, cur) => (
@@ -120,6 +143,17 @@
       }
 
       const widthdrawalData = getWithdrawalAmounts(growthRatePercent, startingValue, monthlyContribution, numberOfYears, withdrawalRate, expenseRatio, limit)
+      return widthdrawalData
+    }
+
+    function submitAccumulation() {
+      const graphData = getAccumulationData()
+      if (table) {
+        const [, ...rest] = graphData
+        table.loadData(rest)
+      }
+
+      const widthdrawalData = getWithdrawalData()
       if (withdrawalTable) {
         const [, ...rest] = widthdrawalData
         withdrawalTable.loadData(rest)
@@ -135,36 +169,39 @@
     }
 
     $(document).ready(function() {
+      const accumlationData = getAccumulationData()
+      const [accumulationHeader, ...accumulationRows] = accumlationData
+
+      const columns = [
+        { type: 'numeric' },
+        ...accumulationHeader.slice(0, -1).map(header => currencyColumn)
+      ]
+
       const accumulationContainer = document.getElementById('accumlation-table');
       table = new Handsontable(accumulationContainer, {
-        data: [],
+        data: accumulationRows,
         rowHeaders: false,
-        colHeaders: ['Year', 'Cash Contribution', 'Bourse Direct', 'Boursorama', 'Saxo'],
+        colHeaders: accumulationHeader,
         licenseKey: 'non-commercial-and-evaluation',
-        columns: [
-          { type: 'numeric' },
-          currencyColumn,
-          currencyColumn,
-          currencyColumn,
-          currencyColumn
-        ]
+        columns
       });
+
+      const withdrawalData = getWithdrawalData()
+      const [withdrawalHeader, ...withdrawalRows] = withdrawalData
+
+      const withDrawalColumns = [
+        { type: 'text' },
+        ...withdrawalHeader.slice(0, -1).map(header => currencyColumn)
+      ]
 
       const withdrawalContainer = document.getElementById('withdrawal-table');
       withdrawalTable = new Handsontable(withdrawalContainer, {
-        data: [],
+        data: withdrawalRows,
         rowHeaders: false,
-        colHeaders: ['', 'Bourse Direct', 'Boursorama', 'Saxo'],
+        colHeaders: withdrawalHeader,
         licenseKey: 'non-commercial-and-evaluation',
-        columns: [
-          { type: 'text' },
-          currencyColumn,
-          currencyColumn,
-          currencyColumn
-        ]
+        columns: withDrawalColumns,
       });
-
-      submitAccumulation()
     })
   </script>
 </body>
