@@ -95,27 +95,21 @@ function getAllFees(maxAmount, feeFunctions) {
     return fees
 }
 
-function amundiMsciWorldFee(totalPortfolioAmount) {
-    return totalPortfolioAmount * 0.0038
-}
 
 const providers = [
     { 
         name:'Bourse Direct',
         calcBrokerFee: bouseDirectPeaBrokerageFee,
-        calcFundFees: amundiMsciWorldFee,
         calcWithdrawalFee: () => 6
     },
     {
         name: 'Boursorama',
         calcBrokerFee: boursoramaPeaBrokerageFee,
-        calcFundFees: amundiMsciWorldFee,
         calcWithdrawalFee: () => 0
     },
     {
         name: 'Saxo',
         calcBrokerFee: saxoBankPeaBrokerageFee,
-        calcFundFees: amundiMsciWorldFee,
         calcWithdrawalFee: () => 0
     }
     // Add more here to include in comparison
@@ -149,7 +143,7 @@ function calculateMonthsOfContributionLeftInYear(accountLimit, totalContribution
     return MONTHS_PER_YEAR
 }
 
-function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit) {
+function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, expenseRatio, limit) {
     // First column is the year, starting at 0, then we have one per provider
     const header = ['Year', "Cash contribution", ...providers.map(({name}) => name)]
 
@@ -168,7 +162,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
             const monthsLeftInYearToContribute = calculateMonthsOfContributionLeftInYear(limit, totalContribution, monthlyContribution)
             totalContribution += (monthlyContribution * monthsLeftInYearToContribute)
 
-        for (const { name, calcBrokerFee, calcFundFees } of providers) {
+        for (const { name, calcBrokerFee } of providers) {
             // The brokerage fee is taken out of the monthly contribution before we invest
             const brokerFee = calcBrokerFee(monthlyContribution)
             const contributionAfterBrokerFee = monthlyContribution - brokerFee
@@ -198,7 +192,7 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
 
             // Each year, we apply the fund expense ratio to the total amount that was in 
             // the portfolio at the end of the year.
-            const fundFees = calcFundFees(newValue)
+            const fundFees = (expenseRatio / 100) * newValue
             const endOfYearValue = newValue - fundFees
 
             // Now we don't need last year's value so we overwrite it with
@@ -228,8 +222,8 @@ function calculateWithdrawalAmount(totalContribution, totalPortfolioAmount, with
 }
 
 
-function getWithdrawalAmounts(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, withdrawalRatePercent, limit) {
-    const accumulationData = getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit)
+function getWithdrawalAmounts(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, withdrawalRatePercent, expenseRatio, limit) {
+    const accumulationData = getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, expenseRatio, limit)
 
     const finalValues = accumulationData[accumulationData.length - 1]
     const [, totalContribution, ...totalPortfolioAmounts] = finalValues
