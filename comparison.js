@@ -18,6 +18,14 @@ function transpose(matrix) {
     return matrix[0].map((x,i) => matrix.map(x => x[i]))
 } 
 
+// Given a list of funds each with a different expense ratio and and a percentage of the overall portfolio
+// invested in the fund, calculates the weighted-average expense ratio for the portfolio
+function averageExpenseRatio(funds) {
+    return funds
+        .map(({percentage, expenseRatio}) => (percentage / 100) * expenseRatio)
+        .reduce((total, current) => total + current, 0)
+}
+
 
 // Quick and rough CSV builder from two arrays, print output into a CSV file
 // and open directly in Excel to build graphs etc
@@ -105,38 +113,7 @@ function calculateMonthlyBrokerageFee(amount, portfolio, calcProviderFee) {
 }
 
 
-
-const providers = [
-    { 
-        name:'Bourse Direct',
-        calcBrokerFee: bouseDirectPeaBrokerageFee,
-        calcWithdrawalFee: () => 6,
-        portfolio: [
-            { name: 'MSCI World', expenseRatio: 0.38, percentage: 100 }
-        ]
-    },
-    {
-        name: 'Boursorama',
-        calcBrokerFee: boursoramaPeaBrokerageFee,
-        calcWithdrawalFee: () => 0,
-        portfolio: [
-            { name: 'MSCI World', expenseRatio: 0.38, percentage: 100 }
-        ]
-    },
-    {
-        name: 'Saxo',
-        calcBrokerFee: saxoBankPeaBrokerageFee,
-        calcWithdrawalFee: () => 0,
-        portfolio: [
-            { name: 'MSCI World', expenseRatio: 0.38, percentage: 100 }
-        ]
-    }
-    // Add more here to include in comparison
-]
-
-
-
-function getFeeGraphData() {
+function getFeeGraphData(providers) {
     const maxAmount = 10000
 
     const header = ['Amount', ...providers.map(({name}) => name)]
@@ -166,19 +143,22 @@ function calculateMonthsOfContributionLeftInYear(accountLimit, totalContribution
     return MONTHS_PER_YEAR
 }
 
-function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, expenseRatio, limit) {
+function getAccumlationGraphData(parameters, providers) {
+    const { growthRatePercent, startingValue, monthlyContribution, numberOfYears, expenseRatio, limit } = parameters
+
     // First column is the year, starting at 0, then we have one per provider
     const header = ['Year', "Cash contribution", ...providers.map(({name}) => name)]
 
     // First row, year 0 all providers start at the startingValue
     const rows = [[0, 0, ...providers.map(() => startingValue)]]
 
+    const expectedYearlyGrowthRate = growthRatePercent / 100
+
     // Iterate through each year calculating the amount that each account will contain
     // Store and use the values for each provider from the previous year, so 
     // we can calculate a management fee if needed in future
     const lastYearValues = {}
     let totalContribution = 0
-    const cashEquivalent = [startingValue]
     for (let i = 1; i <= numberOfYears; i++) {
             // If the account has a contribution limit, like a PEA, figure out if we're going to hit this 
             // within the year and if so how many months we can continue to contribute
@@ -213,9 +193,13 @@ function getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthl
                 1
             )
 
+            // By default we use the weighted average of the funds in the portfolio, but it can
+            // be overridden by passing a specific expenseRatio parameter into the calculator
+            const effectiveExpenseRatio = expenseRatio || averageExpenseRatio(portfolio)
+
             // Each year, we apply the fund expense ratio to the total amount that was in 
             // the portfolio at the end of the year.
-            const fundFees = (expenseRatio / 100) * newValue
+            const fundFees = (effectiveExpenseRatio / 100) * newValue
             const endOfYearValue = newValue - fundFees
 
             // Now we don't need last year's value so we overwrite it with
@@ -245,8 +229,9 @@ function calculateWithdrawalAmount(totalContribution, totalPortfolioAmount, with
 }
 
 
-function getWithdrawalAmounts(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, withdrawalRatePercent, expenseRatio, limit) {
-    const accumulationData = getAccumlationGraphData(expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, expenseRatio, limit)
+function getWithdrawalAmounts(parameters, providers) {
+    const { withdrawalRatePercent } = parameters
+    const accumulationData = getAccumlationGraphData(parameters, providers)
 
     const finalValues = accumulationData[accumulationData.length - 1]
     const [, totalContribution, ...totalPortfolioAmounts] = finalValues
@@ -257,7 +242,7 @@ function getWithdrawalAmounts(expectedYearlyGrowthRate, startingValue, monthlyCo
         `Gross Monthly at ${withdrawalRatePercent}%`, 
         'After brokerage fees',
         'After withdrawal fees',
-        'Final after 17.2% tax on gains proportion'
+        'After 17.2% tax on gains'
     ]
 
     const providerValues = [valueTitles]

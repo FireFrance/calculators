@@ -12,197 +12,26 @@
   <div class="card">
     <div class="card-body">
     <header>
-      <h1>PEA comparison simulator</h1>
+      <h1>Financial calculators for France</h1>
     </header>
 
-    <p>
-      This calculator will simulate the accumulation of savings in a PEA over time, based on a starting amount and a fixed monthly contribution.
-      When the PEA's limit of 150,000 euros is hit, contributions will automatically be stopped as close to the max as possible, and the funds will
-      continue to grow from then until the end of the period. It will then provide an estimated income you can draw from the PEA based on prefered
-      safe withdrawal rate. 
-    </p>
-    
-    <p>
-      All calculations are based on current estimates of the fees of each provider, which can be complex and could change, but we did our best to take
-      everything into account correctly.
-      See <a href="https://fireuktofrance.wordpress.com/2020/11/29/investing-from-france-best-pea-for-fire/" target="new">our blog post on PEAs for more details</a>
-    </p>
-    <p>
-      The calculator provides a comparison between the best PEA products I found. First, the monthly contribution you input has the brokerage fees
-      for each bank subtracted from it. These fees differ depending on the amount you put in. After this a future value function is used to compound
-      based on the monthly fraction of the expected growth rate. Once the chosen period of saving is over, we calculate an estimated monthly income using the 
-      specified withdrawal rate, subtracting the brokerage fees again to sell the shares and deducting taxes. This assumes that the withdrawals don't reduce
-      the capital in the account, and that you have waited at least 5 years for PEAs before withdrawing.
-
-      The code is all open source and MIT licensed, so feel free to check it out and clone/fork it you want to change stuff.
-    </p>
-    <p>
-      All calculators are performed in your browser and no data that you input is sent to any server
-    </p>
-
-    <div class="card">
-      <div class="card-body">
-        <div class="row">
-          <div class="col-sm">
-            <h3>Simulation options</h2>
-            <form id="accumlation">
-              <div class="form-group">
-                <label for="expectedYearlyGrowthRate">Expected yearly growth in percent.</label>
-                <input type="number" class="form-control" name="expectedYearlyGrowthRate" value=7>
-              </div>
-              <div class="form-group">
-                  <label for="numberOfYears">Number of years to accummulate</label>
-                  <input type="number" class="form-control" name="numberOfYears" value=15>
-              </div>
-              <div class="form-group">
-                  <label for="startingValue">Initial value</label>
-                  <input type="number" class="form-control" name="startingValue" value=0>
-              </div>
-              <div class="form-group">
-                  <label for="monthlyContribution">Monthly contribution</label>
-                  <input type="number" class="form-control" name="monthlyContribution" value=833>
-              </div>
-              <div class="form-group">
-                <label for="expenseRatio">Avg expense ratio of funds in account in percent. Amundi MSCI World is 0.38%</label>
-                <input type="number" class="form-control" name="expenseRatio" value=0.38>
-              </div>
-              <div class="form-group">
-                <label for="limit">Limit - after which contributions will be stopped</label>
-                <input type="number" class="form-control" name="limit" value=150000>
-              </div>
-              <div class="form-group">
-                <label for="withdrawalRate">Withdrawal Rate Percentage - 4% is optimistic, 3% more conservative</label>
-                <input type="number" class="form-control" name="withdrawalRate" value=4>
-              </div>
-              <button type="button" class="btn btn-primary" onclick="submitAccumulation()">Submit</button>
-            </form>
-          </div>
-          <div class="col-sm">
-            <h3>Accumulation by year</h2>
-              <p>This shows how much would be in each account at the year-end</p>
-            <div id="accumlation-table"></div>
-            <h3>Withdrawal estimate</h3>
-            <p>How much you could withdraw per month after taxes</p>
-            <div id="withdrawal-table"></div>
-          </div>
-        </div> 
-      </div>
+    <div class="jumbotron">
+      <h1 class="display-4">PEA Comparison</h1>
+      <p class="lead">Simulation of how much you could save with estimated withdrawal rates, taking brokerage fees and taxes into account. Compares 3 real cheap PEA accounts</p>
+      <a class="btn btn-primary btn-lg" href="peacomparison.html" role="button">Go to calculator</a>
     </div>
+
+    <div class="jumbotron">
+      <h1 class="display-4">Portfolio comparison</h1>
+      <p class="lead">Compares 3 different world wide, index based, PEA portfolios to see how a single worldwide fund compares to a collection of individual funds with lower average expense ratio</p>
+      <a class="btn btn-primary btn-lg" href="portfoliocomparison.html" role="button">Go to calculator</a>
+    </div>
+   
   </div>
 </div>
 
     
-  <script src="comparison.js"></script>
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet">
-  <script type="text/javascript">
-
-    let table = null
-    let withdrawalTable = null
-
-    function getAccumulationData() {
-      const formData = $("#accumlation").serializeArray()
-
-      const parameters = formData.reduce((acc, cur) => (
-          {
-            ...acc,
-            [cur.name]: cur.value
-          }
-      ), {})
-
-      const { expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit, withdrawalRate, expenseRatio } = parameters
-
-      const growthRatePercent = expectedYearlyGrowthRate / 100
-
-      const graphData = getAccumlationGraphData(growthRatePercent, startingValue, monthlyContribution, numberOfYears, expenseRatio, limit)
-      return graphData
-    }
-
-    function getWithdrawalData() {
-      const formData = $("#accumlation").serializeArray()
-
-      const parameters = formData.reduce((acc, cur) => (
-          {
-            ...acc,
-            [cur.name]: cur.value
-          }
-      ), {})
-
-      const { expectedYearlyGrowthRate, startingValue, monthlyContribution, numberOfYears, limit, withdrawalRate, expenseRatio } = parameters
-
-      const growthRatePercent = expectedYearlyGrowthRate / 100
-
-      const graphData = getAccumlationGraphData(growthRatePercent, startingValue, monthlyContribution, numberOfYears, expenseRatio, limit)
-      const container = document.getElementById('accumlation-table');
-
-      if (table) {
-        const [, ...rest] = graphData
-        table.loadData(rest)
-      }
-
-      const widthdrawalData = getWithdrawalAmounts(growthRatePercent, startingValue, monthlyContribution, numberOfYears, withdrawalRate, expenseRatio, limit)
-      return widthdrawalData
-    }
-
-    function submitAccumulation() {
-      const graphData = getAccumulationData()
-      if (table) {
-        const [, ...rest] = graphData
-        table.loadData(rest)
-      }
-
-      const widthdrawalData = getWithdrawalData()
-      if (withdrawalTable) {
-        const [, ...rest] = widthdrawalData
-        withdrawalTable.loadData(rest)
-      }
-    }
-
-    const currencyColumn = {
-      type: 'numeric',
-      numericFormat: {
-        pattern: '0,0.00',
-        culture: 'fr-FR'
-      }
-    }
-
-    $(document).ready(function() {
-      const accumlationData = getAccumulationData()
-      const [accumulationHeader, ...accumulationRows] = accumlationData
-
-      const columns = [
-        { type: 'numeric' },
-        ...accumulationHeader.slice(0, -1).map(header => currencyColumn)
-      ]
-
-      const accumulationContainer = document.getElementById('accumlation-table');
-      table = new Handsontable(accumulationContainer, {
-        data: accumulationRows,
-        rowHeaders: false,
-        colHeaders: accumulationHeader,
-        licenseKey: 'non-commercial-and-evaluation',
-        columns
-      });
-
-      const withdrawalData = getWithdrawalData()
-      const [withdrawalHeader, ...withdrawalRows] = withdrawalData
-
-      const withDrawalColumns = [
-        { type: 'text' },
-        ...withdrawalHeader.slice(0, -1).map(header => currencyColumn)
-      ]
-
-      const withdrawalContainer = document.getElementById('withdrawal-table');
-      withdrawalTable = new Handsontable(withdrawalContainer, {
-        data: withdrawalRows,
-        rowHeaders: false,
-        colHeaders: withdrawalHeader,
-        licenseKey: 'non-commercial-and-evaluation',
-        columns: withDrawalColumns,
-      });
-    })
-  </script>
 </body>
 </html>
